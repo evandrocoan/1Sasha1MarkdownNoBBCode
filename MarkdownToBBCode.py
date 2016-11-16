@@ -98,6 +98,17 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
             return inline
 
         #
+        # Bold and italic, need to parse this before all the others, as it re-uses its regex's.
+        #
+        self.sourceCode = re.sub( r"_{2}([\s\S]+?)_{2}"  , "[b]\\1[/b]", self.sourceCode ) # __Bold__
+
+        # _Italic_ Needs hack (?<=\s), because _ symbol often use in URLs
+        self.italicParsing( "_" )
+        self.italicParsing( "\*" )
+
+        self.sourceCode = re.sub( r"\*{2}([\s\S]+?)\*{2}", "[b]\\1[/b]", self.sourceCode ) # **Bold**
+
+        #
         # Code, create a function for this and an Automated Unit Test
         #
         self.sourceCode = re.sub( r"```([^`]+)```" , "[code]\\1[/code]" , self.sourceCode ) # ```Multiline\n\code```
@@ -106,18 +117,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         self.sourceCode = re.sub( r"(?m)^\t(.*)$"  , "№[code]\\1[/code]", self.sourceCode ) # Code fragment after tab
 
         #
-        # Bold and italic
-        #
-        self.sourceCode = re.sub( r"_{2}([\s\S]+?)_{2}"  , "[b]\\1[/b]", self.sourceCode ) # __Bold__
-
-        # _Italic_ Needs hack (?<=\s), because _ symbol often use in URLs
-        self.italicParsing( "_" )
-        # self.italicParsing( "\*" )
-
-        self.sourceCode = re.sub( r"\*{2}([\s\S]+?)\*{2}", "[b]\\1[/b]", self.sourceCode ) # **Bold**
-
-        #
-        # URL and images, we only do it after the ``Bold and italic` parsing as it uses this.
+        # URL and images.
         #
         # ![IMG description](URL of image), alt attribute not supported in many forums
         self.sourceCode = re.sub( r"!\[(.*?)\]\((.*?)\)", "[img]\\2[/img]"    , self.sourceCode )
@@ -164,7 +164,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
             startIndex = match.start( 0 )
             endIndex   = match.end( 0 )
 
-            if self.isOnURL( startIndex, endIndex ):
+            if self.isWhereItMustNotToBe( startIndex, endIndex ):
 
                 continue
 
@@ -183,7 +183,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
                                   + "[/i]" \
                                   + self.sourceCode[ endIndex + 1 : ]
 
-    def isOnURL( self, startIndex, endIndex ):
+    def isWhereItMustNotToBe( self, startIndex, endIndex ):
         """
             Valid entrances are:
             _start without space between the _ and the first and last word.
@@ -193,11 +193,11 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         """
 
         # matchesIterator = re.finditer( r"(\[url=?.*\].*\[\\url\])|(\[img\].*\[\\img\])", self.sourceCode )
-        matchesIterator = re.finditer( r"(!\[(.*?)\]\((.*?)\))|(\[(.*?)\]\((.*?)\))|(<(https?:\S+)>)", self.sourceCode )
+        matchesIterator = re.finditer( r"(!\[(.*?)\]\((.*?)\))|(\[(.*?)\]\((.*?)\))|(<(https?:\S+)>)|(```([^`]+)```)", self.sourceCode )
 
         for match in matchesIterator:
 
-            print( "( isOnURL ) Match: {0}".format( match.group( 0 ) ) )
+            print( "( isWhereItMustNotToBe ) Match: {0}".format( match.group( 0 ) ) )
 
             matchStart = match.start( 0 )
             matchEnd   = match.end( 0 )
@@ -205,7 +205,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
             if ( ( matchStart <= startIndex ) and ( startIndex <= matchEnd ) ) \
                or ( ( matchStart <= endIndex ) and ( endIndex <= matchEnd ) ):
 
-                print( "( isOnURL ) Returning true." )
+                print( "( isWhereItMustNotToBe ) Returning true." )
                 return True
 
         return False
