@@ -14,7 +14,29 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
         http://stackoverflow.com/a/1732454/4934640
         http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags
+
+        Changelog:
+
+        2.0.0
+        Fix issue `Disallow regular expression conversion between some tags`
+        https://github.com/Kristinita/1Sasha1MarkdownNoBBCode/issues/1
+
+        1.0.0
+        Initial release by `Kristinita`.
     """
+
+    codeBlock = []
+    codeBlock.append( "```([^`]+)```"  ) # ```Multiline\n\code```
+    codeBlock.append( "`([^`]+)`"      ) # `Code`
+    codeBlock.append( "(?m)^\t(.*)$"   ) # Code fragment after tab
+    codeBlock.append( "(?m)^ {4}(.*)$" ) # Code fragment after 4 spaces
+
+    #
+    # Notice: `alt` attribute not supported in many forums.
+    #
+    imageRegex      = "!\[(.*?)\]\((.*?)\)" # ![IMG description](URL of image)
+    urlRegex        = "<(https?:\S+)>"      # <URL>
+    urlAndLinkRegex = "\[(.*?)\]\((.*?)\)"  # [URL description](URL link)
 
     def run( self, edit ):
 
@@ -51,7 +73,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
             def inline( matchObject ):
                 """
-                    Recursive function called by the `re.sub` for every non-overlapping occurrence of pattern.
+                    Recursive function called by the `re.sub` for every non-overlapping occurrence of the pattern.
 
                     @param matchObject, an `sre.SRE_Match object` match object.
                 """
@@ -62,25 +84,21 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
                 #
                 # Headers
                 #
-                self.sourceCode = re.sub( r"^#\s+(.*?)\s*$"   , "[h1]\\1[/h1]", self.sourceCode ) # # Header first level
-                self.sourceCode = re.sub( r"^##\s+(.*?)\s*$"  , "[h2]\\1[/h2]", self.sourceCode ) # ## Header second level
-                self.sourceCode = re.sub( r"^###\s+(.*?)\s*$" , "[h3]\\1[/h3]", self.sourceCode ) # ### Header third level
-                self.sourceCode = re.sub( r"^####\s+(.*?)\s*$", "[h4]\\1[/h4]", self.sourceCode ) # #### Header fourth level
+                self.sourceCode = re.sub( r"^#\s+(.*?)\s*$"   , "[h1]\\1[/h1]", self.sourceCode ) # Header first level
+                self.sourceCode = re.sub( r"^##\s+(.*?)\s*$"  , "[h2]\\1[/h2]", self.sourceCode ) ## Header second level
+                self.sourceCode = re.sub( r"^###\s+(.*?)\s*$" , "[h3]\\1[/h3]", self.sourceCode ) ### Header third level
+                self.sourceCode = re.sub( r"^####\s+(.*?)\s*$", "[h4]\\1[/h4]", self.sourceCode ) #### Header fourth level
 
-                #
-                # Lists
-                #
-                self.sourceCode = re.sub( r"(?m)^[-+*]\s+(.*)$", translate("№[list]\n[*]%s\n[/list]")  , self.sourceCode ) # + Marked + List
-                self.sourceCode = re.sub( r"(?m)^\d+\.\s+(.*)$", translate("№[list=1]\n[*]%s\n[/list]"), self.sourceCode ) # 1. Numbered 2. List
+                # + Marked + List
+                self.sourceCode = re.sub( r"(?m)^[-+*]\s+(.*)$", translate("№[list]\n[*]%s\n[/list]")  , self.sourceCode )
 
-                #
-                # Quote
-                #
-                self.sourceCode = re.sub(r"^> (.*)$", "[quote]\\1[/quote]", self.sourceCode) # > Quote
+                # 1. Numbered 2. List
+                self.sourceCode = re.sub( r"(?m)^\d+\.\s+(.*)$", translate("№[list=1]\n[*]%s\n[/list]"), self.sourceCode )
 
-                #
+                # > Quote
+                self.sourceCode = re.sub(r"^> (.*)$", "[quote]\\1[/quote]", self.sourceCode)
+
                 # Thematic break
-                #
                 self.sourceCode = re.sub(r"^-{3}(\s*)$", "[hr]", self.sourceCode)
 
                 # Format the `sourceCode` into to `formattingRule` with the `%` formatting rule.
@@ -98,53 +116,54 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
             return inline
 
         #
-        # Bold and italic, need to parse this before all the others, as it re-uses its regex's.
+        # It re-uses several regexes, then it is needed to parse this before all the others,
+        # because it needs several hacks (?<=\s), as `_` symbol often use in URLs.
         #
-        self.sourceCode = re.sub( r"_{2}([\s\S]+?)_{2}"  , "[b]\\1[/b]", self.sourceCode ) # __Bold__
 
-        # _Italic_ Needs hack (?<=\s), because _ symbol often use in URLs
-        self.italicParsing( "_" )
-        self.italicParsing( "\*" )
+        # Strikethrough text
+        self.singleTagContextParser( r"~{2}([\s\S]+?)~{2}", "s" )
 
-        self.sourceCode = re.sub( r"\*{2}([\s\S]+?)\*{2}", "[b]\\1[/b]", self.sourceCode ) # **Bold**
+        # Bold
+        self.singleTagContextParser( r"__([^_]+?)__"     , "b" )
+        self.singleTagContextParser( r"\*\*([^\*]+?)\*\*", "b" )
+
+        # Italic
+        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "_"  ), "i" )
+        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i" )
 
         #
-        # Code, create a function for this and an Automated Unit Test
+        # Code
         #
-        self.sourceCode = re.sub( r"```([^`]+)```" , "[code]\\1[/code]" , self.sourceCode ) # ```Multiline\n\code```
-        self.sourceCode = re.sub( r"`([^`]+)`"     , "[code]\\1[/code]" , self.sourceCode ) # `Code`
-        self.sourceCode = re.sub( r"(?m)^ {4}(.*)$", "№[code]\\1[/code]", self.sourceCode ) # Code fragment after 4 spaces
-        self.sourceCode = re.sub( r"(?m)^\t(.*)$"  , "№[code]\\1[/code]", self.sourceCode ) # Code fragment after tab
+        self.sourceCode = re.sub( r"{0}".format( self.codeBlock[ 0 ] ), "[code]\\1[/code]" , self.sourceCode )
+        self.sourceCode = re.sub( r"{0}".format( self.codeBlock[ 1 ] ), "[code]\\1[/code]" , self.sourceCode )
+        self.sourceCode = re.sub( r"{0}".format( self.codeBlock[ 2 ] ), "№[code]\\1[/code]", self.sourceCode )
+        self.sourceCode = re.sub( r"{0}".format( self.codeBlock[ 3 ] ), "№[code]\\1[/code]", self.sourceCode )
 
         #
         # URL and images.
         #
-        # ![IMG description](URL of image), alt attribute not supported in many forums
-        self.sourceCode = re.sub( r"!\[(.*?)\]\((.*?)\)", "[img]\\2[/img]"    , self.sourceCode )
-        self.sourceCode = re.sub( r"\[(.*?)\]\((.*?)\)" , "[url=\\2]\\1[/url]", self.sourceCode ) # [URL description](URL link)
-        self.sourceCode = re.sub( r"<(https?:\S+)>"     , "[url]\\1[/url]"    , self.sourceCode ) # <URL>
-
-        #
-        # Strikethrough text
-        #
-        self.sourceCode = re.sub( r"~{2}([\s\S]+?)~{2}", "[s]\\1[\s]", self.sourceCode )
+        self.sourceCode = re.sub( r"{0}".format( self.imageRegex      ), "[img]\\2[/img]"    , self.sourceCode )
+        self.sourceCode = re.sub( r"{0}".format( self.urlRegex        ), "[url]\\1[/url]"    , self.sourceCode )
+        self.sourceCode = re.sub( r"{0}".format( self.urlAndLinkRegex ), "[url=\\2]\\1[/url]", self.sourceCode )
 
         #
         # Dependencies. Not delete these lines!
+        # Clean the file using the flag symbol `№` indications.
         #
 
         # Enters on multiline mode `(?m)`, and asserts a line start `^` with `№` 0 or more times
-        # not following it, until the end of the line `$`.
-        self.sourceCode = re.sub( r"(?m)^((?!№).*)$"          , translate(), self.sourceCode )
+        # not following it, until the end of the line `$`, i.e., passes a function pointer to
+        # `inline`, and call it for every line which does not start with `№`.
+        self.sourceCode = re.sub( r"(?m)^((?!№).*)$", translate(), self.sourceCode )
 
-        self.sourceCode = re.sub( r"(?m)^№\["                 , "["        , self.sourceCode )
-        self.sourceCode = re.sub( r"\[/code]\n\[code(=.*?)?]" , "\n"       , self.sourceCode )
-        self.sourceCode = re.sub( r"\[/list]\n\[list(=1)?]\n" , ""         , self.sourceCode )
-        self.sourceCode = re.sub( r"\[/quote]\n\[quote]"      , "\n"       , self.sourceCode )
+        self.sourceCode = re.sub( r"(?m)^№\["                , "[" , self.sourceCode )
+        self.sourceCode = re.sub( r"\[/code]\n\[code(=.*?)?]", "\n", self.sourceCode )
+        self.sourceCode = re.sub( r"\[/list]\n\[list(=1)?]\n", ""  , self.sourceCode )
+        self.sourceCode = re.sub( r"\[/quote]\n\[quote]"     , "\n", self.sourceCode )
 
         return self.sourceCode
 
-    def italicParsing( self, specialChar ):
+    def singleTagContextParser( self, regexExpression, bbCodeTag ):
         """
             Valid entrances are:
             _start without space between the _ and the first and last word.
@@ -155,35 +174,50 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         # self.sourceCode = re.sub( r"_([^_]+?)_"          , "[i]\\1[/i]", self.sourceCode )
         # for index in range( 0, len( self.sourceCode ) ):
 
-        matchesIterator = re.finditer( r"{0}([^{0}]+?)(?={0})".format( specialChar ), self.sourceCode )
+        matchesIterator = re.finditer( regexExpression, self.sourceCode )
+        exceptionRegex  = self.createRegexExceptoin()
 
         for match in matchesIterator:
 
-            print( "( italicParsing ) Match: {0}".format( match.group( 0 ) ) )
+            print( "( singleTagContextParser ) Match: {0}".format( match.group( 0 ) ) )
 
             startIndex = match.start( 0 )
             endIndex   = match.end( 0 )
 
-            if self.isWhereItMustNotToBe( startIndex, endIndex ):
+            if self.isWhereItMustNotToBe( startIndex, endIndex, exceptionRegex ):
 
                 continue
 
             if endIndex + 1 > len( self.sourceCode ):
 
                 self.sourceCode = self.sourceCode[ 0 : startIndex ] \
-                                  + "[i]" \
-                                  + self.sourceCode[ startIndex+1 : endIndex ] \
-                                  + "[/i]"
+                                  + "[{0}]".format( bbCodeTag ) \
+                                  + self.sourceCode[ startIndex + 1 : endIndex ] \
+                                  + "[/{0}]".format( bbCodeTag )
 
             else:
 
                 self.sourceCode = self.sourceCode[ 0 : startIndex ] \
-                                  + "[i]" \
+                                  + "[{0}]".format( bbCodeTag ) \
                                   + self.sourceCode[ startIndex + 1 : endIndex ] \
-                                  + "[/i]" \
+                                  + "[/{0}]".format( bbCodeTag ) \
                                   + self.sourceCode[ endIndex + 1 : ]
 
-    def isWhereItMustNotToBe( self, startIndex, endIndex ):
+    def createRegexExceptoin( self ):
+
+        exceptionRegex  =  ""
+        exceptionRegex +=  "(" + self.codeBlock[ 0 ]  + ")"
+        exceptionRegex += "|(" + self.codeBlock[ 1 ]  + ")"
+        exceptionRegex += "|(" + self.codeBlock[ 2 ]  + ")"
+        exceptionRegex += "|(" + self.codeBlock[ 3 ]  + ")"
+        exceptionRegex += "|(" + self.imageRegex      + ")"
+        exceptionRegex += "|(" + self.urlRegex        + ")"
+        exceptionRegex += "|(" + self.urlAndLinkRegex + ")"
+
+        return exceptionRegex
+
+
+    def isWhereItMustNotToBe( self, startIndex, endIndex, exceptionRegex ):
         """
             Valid entrances are:
             _start without space between the _ and the first and last word.
@@ -192,8 +226,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
             But is does not have effect inside code blocks, neither URL's.
         """
 
-        # matchesIterator = re.finditer( r"(\[url=?.*\].*\[\\url\])|(\[img\].*\[\\img\])", self.sourceCode )
-        matchesIterator = re.finditer( r"(!\[(.*?)\]\((.*?)\))|(\[(.*?)\]\((.*?)\))|(<(https?:\S+)>)|(```([^`]+)```)", self.sourceCode )
+        matchesIterator = re.finditer( r"{0}".format( exceptionRegex ), self.sourceCode )
 
         for match in matchesIterator:
 
