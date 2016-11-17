@@ -10,8 +10,8 @@ Example* of code
 > asdfadsf
 > aldsfalsdjf
 
-> asdfadsf
-aldsfalsdjf
+**bool
+booll**
 
 
 
@@ -20,14 +20,4 @@ aldsfalsdjf
 
     fadsf
     sadfasdf
-
-
-1. **bold
-1. boool**
-
-1. **boo.. afs**
-
-**bool
-booll**
-
 

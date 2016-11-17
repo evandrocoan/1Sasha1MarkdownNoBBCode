@@ -119,17 +119,11 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         # It re-uses several regexes, then it is needed to parse this before all the others,
         # because it needs several hacks (?<=\s), as `_` symbol often use in URLs.
         #
-
-        # Strikethrough text
-        self.singleTagContextParser( r"~{2}([\s\S]+?)~{2}", "s" )
-
-        # Bold
-        self.singleTagContextParser( r"__([^_]+?)__"     , "b" )
-        self.singleTagContextParser( r"\*\*([^\*]+?)\*\*", "b" )
-
-        # Italic
-        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "_"  ), "i" )
-        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i" )
+        self.singleTagContextParser( r"\*\*([^\*]+?)(?=\*\*)"              , "b", 2 ) # **Bold**
+        # self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i"    ) # *Italic*
+        # self.singleTagContextParser( r"_(?=_)([^_]+?)(?=__)"               , "b", 2 ) # __Bold__
+        # self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "_"  ), "i"    ) # _Italic_
+        # self.singleTagContextParser( r"~(?=~)([\s\S]+?)(?=~~)"             , "s"    ) # ~Strikethrough~
 
         #
         # Code
@@ -163,7 +157,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
         return self.sourceCode
 
-    def singleTagContextParser( self, regexExpression, bbCodeTag ):
+    def singleTagContextParser( self, regexExpression, bbCodeTag, replacementSize = 1 ):
         """
             Valid entrances are:
             _start without space between the _ and the first and last word.
@@ -171,13 +165,26 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
             But is does not have effect inside code blocks, neither URL's.
         """
+
         # self.sourceCode = re.sub( r"_([^_]+?)_"          , "[i]\\1[/i]", self.sourceCode )
         # for index in range( 0, len( self.sourceCode ) ):
 
+        # Used to count how many iterations are necessary on the worst case scenario.
         matchesIterator = re.finditer( regexExpression, self.sourceCode )
+
+        # The exclusion pattern to remove wrong blocks from being parsed.
         exceptionRegex  = self.createRegexExceptoin()
 
-        for match in matchesIterator:
+        # Iterate until all the initial matches list to finish.
+        for element in matchesIterator:
+
+            # To perform a new search on the new updated string.
+            match = re.search( regexExpression, self.sourceCode )
+
+            # Exit the parsing iteration when not more matches are found.
+            if match is None:
+
+                break
 
             print( "( singleTagContextParser ) Match: {0}".format( match.group( 0 ) ) )
 
@@ -188,20 +195,21 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
                 continue
 
-            if endIndex + 1 > len( self.sourceCode ):
+            if endIndex + replacementSize > len( self.sourceCode ):
 
                 self.sourceCode = self.sourceCode[ 0 : startIndex ] \
                                   + "[{0}]".format( bbCodeTag ) \
-                                  + self.sourceCode[ startIndex + 1 : endIndex ] \
+                                  + self.sourceCode[ startIndex + replacementSize : endIndex ] \
                                   + "[/{0}]".format( bbCodeTag )
 
             else:
 
                 self.sourceCode = self.sourceCode[ 0 : startIndex ] \
                                   + "[{0}]".format( bbCodeTag ) \
-                                  + self.sourceCode[ startIndex + 1 : endIndex ] \
+                                  + self.sourceCode[ startIndex + replacementSize : endIndex ] \
                                   + "[/{0}]".format( bbCodeTag ) \
-                                  + self.sourceCode[ endIndex + 1 : ]
+                                  + self.sourceCode[ endIndex + replacementSize : ]
+
 
     def createRegexExceptoin( self ):
 
