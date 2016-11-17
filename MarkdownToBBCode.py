@@ -18,7 +18,9 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         Changelog:
 
         2.0.1
-        Fixed several conversion bugs involving *Italic*, **Bold**, ***Bold-Italic***, etc.
+        Fixed several conversion bugs involving *Italic*, **Bold**, ***Bold-Italic***, etc. Issues:
+        https://github.com/Kristinita/1Sasha1MarkdownNoBBCode/issues/1
+        https://github.com/evandrocoan/SublimeTextStudio/issues/21
 
         2.0.0
         Fix issue `Disallow regular expression conversion between some tags`
