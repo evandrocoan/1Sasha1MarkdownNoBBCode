@@ -10,7 +10,7 @@ import re, sys
 
 class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
     """
-        You cannot parse the ~whole conversion from Markdown to BB Code only with regex.
+        You cannot parse the whole conversion from Markdown to BB Code only with regex.
 
         http://stackoverflow.com/a/1732454/4934640
         http://stackoverflow.com/questions/1732348/regex-match-open-tags-except-xhtml-self-contained-tags
