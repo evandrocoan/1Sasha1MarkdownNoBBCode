@@ -17,6 +17,9 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
         Changelog:
 
+        2.0.1
+        Fixed several conversion bugs involving *Italic*, **Bold**, ***Bold-Italic***, etc.
+
         2.0.0
         Fix issue `Disallow regular expression conversion between some tags`
         https://github.com/Kristinita/1Sasha1MarkdownNoBBCode/issues/1
@@ -187,7 +190,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
                 break
 
-            print( "( singleTagContextParser ) Match: {0}".format( match.group( 0 ) ) )
+            # print( "( singleTagContextParser ) Match: {0}".format( match.group( 0 ) ) )
 
             startIndex = match.start( 0 )
             endIndex   = match.end( 0 )
@@ -196,7 +199,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
             endIndex   = endIndex   + nextSearchPosition
 
             nextSearchPosition = startIndex + replacementSize
-            print( "nextSearchPosition: {0}".format( nextSearchPosition ) )
+            # print( "nextSearchPosition: {0}".format( nextSearchPosition ) )
 
             if self.isWhereItMustNotToBe( startIndex, endIndex, exceptionRegex ):
 
@@ -245,7 +248,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
         for match in matchesIterator:
 
-            print( "( isWhereItMustNotToBe ) Match: {0}".format( match.group( 0 ) ) )
+            # print( "( isWhereItMustNotToBe ) Match: {0}".format( match.group( 0 ) ) )
 
             matchStart = match.start( 0 )
             matchEnd   = match.end( 0 )
@@ -253,7 +256,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
             if ( ( matchStart <= startIndex ) and ( startIndex <= matchEnd ) ) \
                or ( ( matchStart <= endIndex ) and ( endIndex <= matchEnd ) ):
 
-                print( "( isWhereItMustNotToBe ) Returning true." )
+                # print( "( isWhereItMustNotToBe ) Returning true." )
                 return True
 
         return False
