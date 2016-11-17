@@ -120,7 +120,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         # because it needs several hacks (?<=\s), as `_` symbol often use in URLs.
         #
         self.singleTagContextParser( r"\*\*([^\*]+?)(?=\*\*)"              , "b", 2 ) # **Bold**
-        # self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i"    ) # *Italic*
+        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i"    ) # *Italic*
         # self.singleTagContextParser( r"_(?=_)([^_]+?)(?=__)"               , "b", 2 ) # __Bold__
         # self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "_"  ), "i"    ) # _Italic_
         # self.singleTagContextParser( r"~(?=~)([\s\S]+?)(?=~~)"             , "s"    ) # ~Strikethrough~
@@ -173,13 +173,14 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         matchesIterator = re.finditer( regexExpression, self.sourceCode )
 
         # The exclusion pattern to remove wrong blocks from being parsed.
-        exceptionRegex  = self.createRegexExceptoin()
+        nextSearchPosition = 0
+        exceptionRegex     = self.createRegexExceptoin()
 
         # Iterate until all the initial matches list to finish.
         for element in matchesIterator:
 
             # To perform a new search on the new updated string.
-            match = re.search( regexExpression, self.sourceCode )
+            match = re.search( regexExpression, self.sourceCode[ nextSearchPosition : ] )
 
             # Exit the parsing iteration when not more matches are found.
             if match is None:
@@ -190,6 +191,12 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
 
             startIndex = match.start( 0 )
             endIndex   = match.end( 0 )
+
+            startIndex = startIndex + nextSearchPosition
+            endIndex   = endIndex   + nextSearchPosition
+
+            nextSearchPosition = startIndex + replacementSize
+            print( "nextSearchPosition: {0}".format( nextSearchPosition ) )
 
             if self.isWhereItMustNotToBe( startIndex, endIndex, exceptionRegex ):
 
