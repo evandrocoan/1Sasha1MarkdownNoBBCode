@@ -119,11 +119,11 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         # It re-uses several regexes, then it is needed to parse this before all the others,
         # because it needs several hacks (?<=\s), as `_` symbol often use in URLs.
         #
-        self.singleTagContextParser( r"\*\*([^\*]+?)(?=\*\*)"              , "b", 2 ) # **Bold**
-        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i", 1 ) # *Italic*
-        self.singleTagContextParser( r"__([^_]+?)(?=__)"                   , "b", 2 ) # __Bold__
-        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "_"  ), "i", 1 ) # _Italic_
-        self.singleTagContextParser( r"~~([\s\S]+?)(?=~~)"                 , "s", 2 ) # ~Strikethrough~
+        self.singleTagContextParser( r"\*\*[^ \n]([^\*]+?)[^ \n](?=\*\*)"              , "b", 2 ) # **Bold**
+        self.singleTagContextParser( r"{0}[^ \n]([^{0}]+?)[^ \n](?={0})".format( "\*" ), "i", 1 ) # *Italic*
+        self.singleTagContextParser( r"__[^ \n]([^_]+?)[^ \n](?=__)"                   , "b", 2 ) # __Bold__
+        self.singleTagContextParser( r"{0}[^ \n]([^{0}]+?)[^ \n](?={0})".format( "_"  ), "i", 1 ) # _Italic_
+        self.singleTagContextParser( r"~~[^ \n]([\s\S]+?)[^ \n](?=~~)"                 , "s", 2 ) # ~Strikethrough~
 
         #
         # Code
@@ -138,7 +138,7 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         #
         self.sourceCode = re.sub( r"{0}".format( self.imageRegex      ), "[img]\\2[/img]"    , self.sourceCode )
         self.sourceCode = re.sub( r"{0}".format( self.urlRegex        ), "[url]\\1[/url]"    , self.sourceCode )
-        self.sourceCode = re.sub( r"{0}".format( self.urlAndLinkRegex ), "[url=\\2]\\1[/url]", self.sourceCode )
+        self.sourceCode = re.sub( r"{0}".format( self.urlAndLinkRegex ), "[url=\"\\2\"]\\1[/url]", self.sourceCode )
 
         #
         # Dependencies. Not delete these lines!

@@ -14,8 +14,10 @@ Example* of code
 booll**
 
 
-
+***bold***
 **bold**
+** bold**
+**bold **
 **bo ld**
 
     fadsf
