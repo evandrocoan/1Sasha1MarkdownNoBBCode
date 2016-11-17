@@ -14,3 +14,20 @@ Example* of code
 aldsfalsdjf
 
 
+
+**bold**
+**bo ld**
+
+    fadsf
+    sadfasdf
+
+
+1. **bold
+1. boool**
+
+1. **boo.. afs**
+
+**bool
+booll**
+
+
