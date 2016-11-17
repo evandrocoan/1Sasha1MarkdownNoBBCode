@@ -120,10 +120,10 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         # because it needs several hacks (?<=\s), as `_` symbol often use in URLs.
         #
         self.singleTagContextParser( r"\*\*([^\*]+?)(?=\*\*)"              , "b", 2 ) # **Bold**
-        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i"    ) # *Italic*
-        # self.singleTagContextParser( r"_(?=_)([^_]+?)(?=__)"               , "b", 2 ) # __Bold__
-        # self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "_"  ), "i"    ) # _Italic_
-        # self.singleTagContextParser( r"~(?=~)([\s\S]+?)(?=~~)"             , "s"    ) # ~Strikethrough~
+        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "\*" ), "i", 1 ) # *Italic*
+        self.singleTagContextParser( r"__([^_]+?)(?=__)"                   , "b", 2 ) # __Bold__
+        self.singleTagContextParser( r"{0}([^{0}]+?)(?={0})".format( "_"  ), "i", 1 ) # _Italic_
+        self.singleTagContextParser( r"~~([\s\S]+?)(?=~~)"                 , "s", 2 ) # ~Strikethrough~
 
         #
         # Code
