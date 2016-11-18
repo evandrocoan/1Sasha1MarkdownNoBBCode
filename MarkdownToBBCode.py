@@ -125,9 +125,9 @@ class MarkdowntobbcodeCommand( sublime_plugin.TextCommand ):
         # because it needs several hacks (?<=\s), as `_` symbol often use in URLs.
         #
         self.singleTagContextParser( r"\*\*[^ \n]([^\*]+?)[^ \n](?=\*\*)"              , "b", 2 ) # **Bold**
-        self.singleTagContextParser( r"{0}[^ \n]([^{0}]+?)[^ \n](?={0})".format( "\*" ), "i", 1 ) # *Italic*
+        self.singleTagContextParser( r"{0}[^ \n]([^{0}]+?)[^ \n](?={0})".format( "\*" ), "i"    ) # *Italic*
         self.singleTagContextParser( r"__[^ \n]([^_]+?)[^ \n](?=__)"                   , "b", 2 ) # __Bold__
-        self.singleTagContextParser( r"{0}[^ \n]([^{0}]+?)[^ \n](?={0})".format( "_"  ), "i", 1 ) # _Italic_
+        self.singleTagContextParser( r"{0}[^ \n]([^{0}]+?)[^ \n](?={0})".format( "_"  ), "i"    ) # _Italic_
         self.singleTagContextParser( r"~~[^ \n]([\s\S]+?)[^ \n](?=~~)"                 , "s", 2 ) # ~Strikethrough~
 
         #
